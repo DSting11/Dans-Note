@@ -94,6 +94,20 @@ header{text-align:center;margin-bottom:56px;}
 .setup-banner code{background:rgba(0,0,0,0.08);padding:1px 6px;border-radius:4px;font-size:0.78rem;font-family:'Courier New',monospace;}
 .setup-banner.hidden{display:none;}
 
+/* ── ERROR BANNER ── */
+.error-banner{
+  background:linear-gradient(135deg,rgba(255,235,235,0.95),rgba(255,215,215,0.90));
+  border:1px solid rgba(200,80,80,0.25);
+  border-radius:16px;padding:18px 22px;margin-bottom:20px;
+  font-size:0.82rem;line-height:1.9;color:#7a2020;
+  position:relative;overflow:hidden;
+}
+.error-banner strong{font-weight:600;display:block;margin-bottom:4px;font-size:0.85rem;}
+.error-banner code{background:rgba(0,0,0,0.09);padding:2px 8px;border-radius:5px;font-size:0.76rem;font-family:'Courier New',monospace;display:inline-block;margin:4px 0;}
+.error-banner a{color:#7a2020;font-weight:600;}
+.error-banner b{font-weight:600;}
+.error-banner.hidden{display:none;}
+
 /* ── FANCY CARD ── */
 .wrapper{max-width:680px;margin:0 auto;}
 .fancy-card{
@@ -221,11 +235,21 @@ textarea{min-height:96px;}
 
 <div class="wrapper">
 
-  <!-- Setup Banner — hilang otomatis setelah Firebase dikonfigurasi -->
+  <!-- Setup Banner -->
   <div class="setup-banner" id="setup-banner">
     <strong>⚙ Perlu Setup Firebase (sekali saja)</strong>
-    Ganti nilai <code>FIREBASE_CONFIG</code> di bagian script dengan config dari project Firebase kamu.<br>
-    Ikuti instruksi di komentar atas file ini. Setelah diisi, banner ini hilang otomatis.
+    Ganti nilai <code>FIREBASE_CONFIG</code> di bagian script dengan config dari project Firebase kamu.
+  </div>
+
+  <!-- Error Banner — muncul otomatis kalau koneksi gagal -->
+  <div class="error-banner hidden" id="error-banner">
+    <strong>⚠ Tidak bisa terhubung ke Firebase</strong>
+    Kemungkinan besar <b>Database Rules</b> perlu diubah. Ikuti langkah ini:<br>
+    1. Buka <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a><br>
+    2. Pilih project → <b>Realtime Database</b> → tab <b>Rules</b><br>
+    3. Hapus semua isinya, ganti dengan ini lalu klik <b>Publish</b>:<br>
+    <code>{ "rules": { ".read": true, ".write": true } }</code><br>
+    4. Refresh halaman ini ✓
   </div>
 
   <div class="fancy-card">
@@ -234,7 +258,7 @@ textarea{min-height:96px;}
       <div class="form-grid">
         <div class="form-group">
           <label>Nama</label>
-          <input type="text" id="inp-name" placeholder="Namamu.." maxlength="40"/>
+          <input type="text" id="inp-name" placeholder="Nama kamu…" maxlength="40"/>
         </div>
         <div class="form-group">
           <label>Font</label>
@@ -265,7 +289,7 @@ textarea{min-height:96px;}
         <div class="form-divider"></div>
         <div class="form-group full">
           <label>Pesan</label>
-          <textarea id="inp-msg" placeholder="Tulis pesan.. (Enter kirim · Shift+Enter baris baru)" maxlength="500"></textarea>
+          <textarea id="inp-msg" placeholder="Tulis pesanmu… (Enter kirim · Shift+Enter baris baru)" maxlength="500"></textarea>
         </div>
       </div>
 
@@ -408,51 +432,54 @@ function renderMessages(msgs) {
 function startListening() {
   if (!db) {
     setStatus(false, 'Offline — setup Firebase dulu');
-    const local = (() => { try { return JSON.parse(localStorage.getItem('dnote_local')) || []; } catch { return []; } })();
-    renderMessages(local);
+    renderMessages([]);
     return;
   }
 
   setStatus(null, 'Menghubungkan…');
 
-  // ── 1. Monitor koneksi Firebase secara real-time ──
-  // .info/connected adalah node khusus Firebase yang selalu update
+  // Timeout 5 detik — kalau belum connect, tampilkan error banner
+  const failTimer = setTimeout(() => {
+    if (!window._dnoteConnected) {
+      setStatus(false, 'Gagal terhubung');
+      renderMessages([]);
+      document.getElementById('count-label').textContent = '— pesan';
+      document.getElementById('error-banner').classList.remove('hidden');
+    }
+  }, 5000);
+
+  // Monitor koneksi live via node khusus Firebase
   db.ref('.info/connected').on('value', snap => {
     if (snap.val() === true) {
+      clearTimeout(failTimer);
+      window._dnoteConnected = true;
       setStatus(true, 'Live · Global');
+      document.getElementById('error-banner').classList.add('hidden');
     } else {
-      // Hanya tampilkan offline kalau listener sudah pernah jalan (bukan first load)
-      if (window._dnoteLoaded) setStatus(false, 'Reconnecting…');
+      if (window._dnoteConnected) {
+        // Sudah pernah connect, sekarang putus → reconnecting
+        setStatus(false, 'Reconnecting…');
+      }
     }
   });
 
-  // ── 2. Timeout 8 detik — kalau belum ada respons, kasih pesan error ──
-  const loadTimeout = setTimeout(() => {
-    if (!window._dnoteLoaded) {
-      setStatus(false, 'Koneksi lambat — cek internet / Database Rules');
-      renderMessages([]); // hapus skeleton
-      document.getElementById('count-label').textContent = '⚠ Gagal memuat';
-      showToast('⚠ Koneksi timeout. Cek rules Firebase: ubah ke test mode.', 6000);
-    }
-  }, 8000);
-
-  // ── 3. Real-time listener utama ──
-  const ref = db.ref('messages');
-  ref.orderByChild('ts').on('value', snapshot => {
-    clearTimeout(loadTimeout);       // batalkan timeout karena sudah dapat data
-    window._dnoteLoaded = true;      // tandai sudah loaded
+  // Listener utama — auto-update realtime tanpa refresh
+  db.ref('messages').orderByChild('ts').on('value', snapshot => {
+    clearTimeout(failTimer);
+    window._dnoteConnected = true;
     setStatus(true, 'Live · Global');
+    document.getElementById('error-banner').classList.add('hidden');
 
     const msgs = [];
     snapshot.forEach(child => msgs.push({ id: child.key, ...child.val() }));
-    renderMessages(msgs);            // langsung render — tidak perlu refresh!
+    renderMessages(msgs);
   }, err => {
-    clearTimeout(loadTimeout);
-    console.error(err);
-    setStatus(false, 'Koneksi gagal');
-    renderMessages([]); // hapus skeleton biar tidak hang
-    document.getElementById('count-label').textContent = '⚠ Gagal memuat';
-    showToast('⚠ Gagal terhubung. Kemungkinan Database Rules sudah expired.', 6000);
+    clearTimeout(failTimer);
+    console.error('DB error:', err.code, err.message);
+    setStatus(false, 'Akses ditolak');
+    renderMessages([]);
+    document.getElementById('count-label').textContent = '— pesan';
+    document.getElementById('error-banner').classList.remove('hidden');
   });
 }
 
@@ -460,8 +487,8 @@ function setStatus(online, text) {
   const dot   = document.getElementById('live-dot');
   const label = document.getElementById('live-label');
   label.textContent = text;
-  if (online === true)  { dot.className = 'live-dot'; }
-  if (online === false) { dot.className = 'live-dot offline'; }
+  if (online === true)  dot.className = 'live-dot';
+  if (online === false) dot.className = 'live-dot offline';
 }
 
 // ── Submit ──
