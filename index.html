@@ -337,17 +337,8 @@ const firebaseConfig = {
 /* ══════════════════════════════════════════════════════ */
 
 // ── Cek apakah config sudah diisi ──
-const isConfigured = !Object.values(FIREBASE_CONFIG).some(v => v.startsWith('GANTI'));
+const isConfigured = !Object.values(FIREBASE_CONFIG).some(v => String(v).includes('GANTI'));
 if (isConfigured) document.getElementById('setup-banner').classList.add('hidden');
-
-// ── Init Firebase ──
-let db = null;
-try {
-  if (isConfigured) {
-    firebase.initializeApp(FIREBASE_CONFIG);
-    db = firebase.database();
-  }
-} catch(e) { console.error('Firebase init error:', e); }
 
 // ── Helpers ──
 const isHex = h => /^#[0-9a-fA-F]{6}$/.test(h);
@@ -362,6 +353,88 @@ function showToast(msg, duration = 3000) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function showError(html) {
+  const b = document.getElementById('error-banner');
+  b.innerHTML = html;
+  b.classList.remove('hidden');
+  setStatus(false, 'Gagal');
+  renderMessages([]);
+}
+
+// ── Diagnosa cepat via REST sebelum init SDK ──
+// Firebase punya REST API sederhana: GET databaseURL/messages.json
+// Kalau dapat respons → config & rules OK. Kalau error → tunjukkan penyebabnya.
+async function diagnoseAndInit() {
+  if (!isConfigured) {
+    setStatus(false, 'Belum dikonfigurasi');
+    renderMessages([]);
+    return;
+  }
+
+  const url = FIREBASE_CONFIG.databaseURL;
+
+  // 1. Cek databaseURL ada & formatnya benar
+  if (!url || !url.startsWith('https://') || !url.includes('firebaseio.com')) {
+    showError(`
+      <strong>❌ databaseURL salah atau kosong</strong>
+      Nilai <code>databaseURL</code> di config tidak valid: <code>${esc(String(url))}</code><br><br>
+      Cara dapat URL yang benar:<br>
+      1. Buka <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a> → project kamu<br>
+      2. Klik <b>Realtime Database</b> di sidebar kiri<br>
+      3. Di bagian atas halaman ada URL seperti: <code>https://nama-project-default-rtdb.firebaseio.com</code><br>
+      4. Salin URL itu dan tempel ke bagian <code>databaseURL</code> di file ini
+    `);
+    return;
+  }
+
+  // 2. Test koneksi via REST (lebih cepat & bisa detect rules problem)
+  setStatus(null, 'Mengecek koneksi…');
+  try {
+    const res = await fetch(`${url}/messages.json?limitToLast=1`, { signal: AbortSignal.timeout(6000) });
+    if (res.status === 200) {
+      // REST OK → init SDK dan mulai realtime
+      initSDK();
+    } else if (res.status === 401 || res.status === 403) {
+      showError(`
+        <strong>❌ Akses ditolak (Error ${res.status}) — Database Rules perlu diubah</strong>
+        Ikuti langkah ini:<br>
+        1. Buka <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a> → project kamu<br>
+        2. Sidebar kiri → <b>Realtime Database</b> → tab <b>Rules</b><br>
+        3. Hapus semua isinya, ganti persis seperti ini:<br>
+        <code>{ "rules": { ".read": true, ".write": true } }</code><br>
+        4. Klik <b>Publish</b> → refresh halaman ini ✓
+      `);
+    } else {
+      showError(`<strong>❌ Error tak terduga: HTTP ${res.status}</strong><br>Coba refresh, atau cek apakah Realtime Database sudah dibuat di Firebase Console.`);
+    }
+  } catch(e) {
+    if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+      showError(`
+        <strong>❌ Koneksi timeout — databaseURL tidak bisa dijangkau</strong>
+        URL yang dicoba: <code>${esc(url)}</code><br><br>
+        Kemungkinan penyebab:<br>
+        • URL salah — pastikan salin dari halaman <b>Realtime Database</b> bukan dari Project Settings<br>
+        • Realtime Database belum dibuat — buka Firebase Console → <b>Realtime Database</b> → <b>Create database</b><br>
+        • Koneksi internet bermasalah
+      `);
+    } else {
+      showError(`<strong>❌ Tidak bisa terhubung:</strong> ${esc(e.message)}`);
+    }
+  }
+}
+
+// ── Init Firebase SDK (hanya dipanggil setelah REST test berhasil) ──
+let db = null;
+function initSDK() {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    startListening();
+  } catch(e) {
+    showError(`<strong>❌ Firebase init gagal:</strong> ${esc(e.message)}`);
+  }
 }
 
 // ── Color sync ──
@@ -547,7 +620,7 @@ inpMsg.addEventListener('keydown', e => {
 
 // ── Boot ──
 updatePreview();
-startListening();
+diagnoseAndInit();
 </script>
 </body>
 </html>
