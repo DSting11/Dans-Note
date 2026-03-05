@@ -502,12 +502,15 @@ async function diagnoseAndInit() {
   }
 }
 
-// ── Init Firebase SDK (hanya dipanggil setelah REST test berhasil) ──
+// ── Init Firebase SDK ──
 let db = null;
 function initSDK() {
   try {
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.database();
+    // Kalau sudah pernah init (misal hot reload), pakai yang ada
+    const app = firebase.apps.length
+      ? firebase.app()
+      : firebase.initializeApp(firebaseConfig);
+    db = firebase.database(app);
     startListening();
   } catch(e) {
     showError(`<strong>❌ Firebase init gagal:</strong> ${esc(e.message)}`);
@@ -645,35 +648,29 @@ async function submitMessage() {
   const text = inpMsg.value.trim();
   if (!name) { showToast('⚠ Login dulu ya!'); return; }
   if (!text) { shake(inpMsg); inpMsg.focus(); return; }
+  if (!db)   { showToast('⚠ Belum terhubung ke database, tunggu sebentar…'); return; }
 
   const btn = document.getElementById('btn-send');
   btn.disabled = true;
   btn.innerHTML = '<span class="btn-spinner"></span>Mengirim…';
 
   const payload = {
-    name, text, font: inpFont.value,
-    colorName: isHex(cnH.value) ? cnH.value : cnP.value,
+    name,
+    text,
+    font:       inpFont.value,
+    colorName:  isHex(cnH.value) ? cnH.value : cnP.value,
     colorText:  isHex(ctH.value) ? ctH.value : ctP.value,
-    ts: Date.now()
+    ts:         Date.now()
   };
 
   try {
-    if (db) {
-      // Push ke Firebase — semua orang langsung lihat
-      await db.ref('messages').push(payload);
-    } else {
-      // Fallback localStorage
-      const local = (() => { try { return JSON.parse(localStorage.getItem('dnote_local')) || []; } catch { return []; } })();
-      local.push({ id: Math.random().toString(36).slice(2), ...payload });
-      localStorage.setItem('dnote_local', JSON.stringify(local));
-      renderMessages(local);
-    }
+    await db.ref('messages').push(payload);
     inpMsg.value = '';
     updatePreview();
     showToast('✦ Pesan terkirim!');
   } catch(e) {
-    console.error(e);
-    showToast('✕ Gagal mengirim. Coba lagi.');
+    console.error('Push error:', e);
+    showToast('✕ Gagal kirim: ' + e.message);
   } finally {
     btn.disabled = false;
     btn.innerHTML = 'Kirim Pesan &rarr;';
