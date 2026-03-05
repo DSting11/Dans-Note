@@ -646,9 +646,15 @@ function setStatus(online, text) {
 async function submitMessage() {
   const name = localStorage.getItem('dnote_username') || '';
   const text = inpMsg.value.trim();
+
+  console.log('[Dnote] submit → name:', name, '| text:', text, '| db:', db ? 'OK' : 'NULL');
+
   if (!name) { showToast('⚠ Login dulu ya!'); return; }
   if (!text) { shake(inpMsg); inpMsg.focus(); return; }
-  if (!db)   { showToast('⚠ Belum terhubung ke database, tunggu sebentar…'); return; }
+  if (!db)   {
+    showToast('⚠ Belum terhubung! Status: ' + document.getElementById('live-label').textContent);
+    return;
+  }
 
   const btn = document.getElementById('btn-send');
   btn.disabled = true;
@@ -657,20 +663,23 @@ async function submitMessage() {
   const payload = {
     name,
     text,
-    font:       inpFont.value,
-    colorName:  isHex(cnH.value) ? cnH.value : cnP.value,
-    colorText:  isHex(ctH.value) ? ctH.value : ctP.value,
-    ts:         Date.now()
+    font:      inpFont.value,
+    colorName: isHex(cnH.value) ? cnH.value : cnP.value,
+    colorText: isHex(ctH.value) ? ctH.value : ctP.value,
+    ts:        Date.now()
   };
 
+  console.log('[Dnote] pushing payload:', payload);
+
   try {
-    await db.ref('messages').push(payload);
+    const ref = await db.ref('messages').push(payload);
+    console.log('[Dnote] push OK, key:', ref.key);
     inpMsg.value = '';
     updatePreview();
     showToast('✦ Pesan terkirim!');
   } catch(e) {
-    console.error('Push error:', e);
-    showToast('✕ Gagal kirim: ' + e.message);
+    console.error('[Dnote] push FAILED:', e.code, e.message);
+    showToast('✕ Gagal: ' + (e.message || e.code || 'unknown error'));
   } finally {
     btn.disabled = false;
     btn.innerHTML = 'Kirim Pesan &rarr;';
