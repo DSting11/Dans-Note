@@ -238,7 +238,7 @@ textarea{min-height:96px;}
   <!-- Setup Banner -->
   <div class="setup-banner" id="setup-banner">
     <strong>⚙ Perlu Setup Firebase (sekali saja)</strong>
-    Ganti nilai <code>FIREBASE_CONFIG</code> di bagian script dengan config dari project Firebase kamu.
+    Ganti nilai <code>firebaseConfig</code> di bagian script dengan config dari project Firebase kamu.
   </div>
 
   <!-- Error Banner — muncul otomatis kalau koneksi gagal -->
@@ -366,7 +366,7 @@ function showError(html) {
 // Firebase punya REST API sederhana: GET databaseURL/messages.json
 // Kalau dapat respons → config & rules OK. Kalau error → tunjukkan penyebabnya.
 async function diagnoseAndInit() {
-  const url = FIREBASE_CONFIG.databaseURL;
+  const url = firebaseConfig.databaseURL;
 
   // 1. Cek databaseURL ada & formatnya benar
   if (!url || !url.startsWith('https://') || !url.includes('firebaseio.com')) {
@@ -422,7 +422,7 @@ async function diagnoseAndInit() {
 let db = null;
 function initSDK() {
   try {
-    firebase.initializeApp(FIREBASE_CONFIG);
+    firebase.initializeApp(firebaseConfig);
     db = firebase.database();
     startListening();
   } catch(e) {
