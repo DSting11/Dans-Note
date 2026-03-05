@@ -615,7 +615,7 @@ function startListening() {
   });
 
   // Listener utama — auto-update realtime tanpa refresh
-  db.ref('messages').orderByChild('ts').on('value', snapshot => {
+  db.ref('messages').on('value', snapshot => {
     clearTimeout(failTimer);
     window._dnoteConnected = true;
     setStatus(true, 'Live · Global');
@@ -623,6 +623,9 @@ function startListening() {
 
     const msgs = [];
     snapshot.forEach(child => msgs.push({ id: child.key, ...child.val() }));
+    // Sort by ts di client side — tidak perlu index di Firebase
+    msgs.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+    console.log('[Dnote] listener fired, total msgs:', msgs.length);
     renderMessages(msgs);
   }, err => {
     clearTimeout(failTimer);
