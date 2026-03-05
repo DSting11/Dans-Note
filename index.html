@@ -81,8 +81,68 @@ header{text-align:center;margin-bottom:56px;}
 .live-dot.offline{background:#ccc;box-shadow:none;animation:none;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(76,175,80,0.4);}50%{box-shadow:0 0 0 5px rgba(76,175,80,0);}}
 
-/* ── SETUP BANNER ── */
-.setup-banner{
+/* ── LOGIN PAGE ── */
+#login-page{
+  position:fixed;inset:0;z-index:100;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 10%, rgba(210,210,205,0.55) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 90% 80%, rgba(195,195,190,0.45) 0%, transparent 65%),
+    linear-gradient(160deg,#f7f6f3 0%,#edecea 40%,#e2e1de 100%);
+  animation:fadeIn 0.4s ease;
+}
+#login-page.hide{animation:fadeOut 0.4s ease forwards;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes fadeOut{from{opacity:1;}to{opacity:0;pointer-events:none;}}
+
+.login-box{
+  width:100%;max-width:420px;
+  position:relative;border-radius:24px;padding:2px;
+  background:linear-gradient(145deg,#d8d6d0,#f5f4f1,#c8c6c0,#eceae6);
+  box-shadow:0 2px 0 rgba(255,255,255,0.9) inset,0 24px 80px rgba(0,0,0,0.12),0 4px 20px rgba(0,0,0,0.07);
+}
+.login-box::before,.login-box::after,.login-box .c-tr,.login-box .c-bl{content:'';position:absolute;width:20px;height:20px;border-color:rgba(110,108,102,0.28);border-style:solid;z-index:2;pointer-events:none;}
+.login-box::before{top:10px;left:10px;border-width:1.5px 0 0 1.5px;border-radius:4px 0 0 0;}
+.login-box::after{bottom:10px;right:10px;border-width:0 1.5px 1.5px 0;border-radius:0 0 4px 0;}
+.login-box .c-tr{top:10px;right:10px;border-width:1.5px 1.5px 0 0;border-radius:0 4px 0 0;}
+.login-box .c-bl{bottom:10px;left:10px;border-width:0 0 1.5px 1.5px;border-radius:0 0 0 4px;}
+
+.login-inner{
+  background:linear-gradient(150deg,rgba(255,255,255,0.97) 0%,rgba(248,247,244,0.95) 40%,rgba(232,230,226,0.92) 100%);
+  border-radius:22px;padding:44px 36px 36px;
+  position:relative;overflow:hidden;text-align:center;
+}
+.login-inner::before{content:'';position:absolute;top:-40%;left:-20%;width:60%;height:70%;background:radial-gradient(ellipse,rgba(255,255,255,0.55) 0%,transparent 70%);pointer-events:none;}
+
+.login-logo-wrap{display:inline-flex;align-items:baseline;gap:1px;margin-bottom:6px;}
+.login-sub{font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:#bbb;margin-bottom:32px;}
+
+.login-label{font-size:0.65rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:#999;display:block;text-align:left;margin-bottom:8px;}
+.login-input{
+  width:100%;font-family:'Inter',sans-serif;font-size:1rem;
+  background:rgba(255,255,255,0.75);
+  border:1px solid rgba(0,0,0,0.16);border-radius:13px;
+  padding:13px 18px;color:#1a1a1a;outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;
+  text-align:center;letter-spacing:0.02em;
+}
+.login-input:focus{background:rgba(255,255,255,0.96);border-color:rgba(0,0,0,0.35);box-shadow:0 0 0 3px rgba(0,0,0,0.05),0 2px 8px rgba(0,0,0,0.07);}
+.login-hint{font-size:0.68rem;color:#bbb;margin-top:10px;letter-spacing:0.04em;}
+.login-hint span{color:#aaa;font-style:italic;}
+
+/* ── USER GREETING BAR ── */
+.user-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(135deg,rgba(255,255,255,0.7),rgba(240,238,234,0.65));
+  border:1px solid rgba(0,0,0,0.09);
+  border-radius:13px;padding:11px 18px;margin-bottom:20px;
+  backdrop-filter:blur(6px);
+}
+.user-bar-name{font-size:0.88rem;font-weight:500;color:#2a2a2a;}
+.user-bar-name span{font-weight:300;color:#aaa;font-size:0.78rem;margin-right:6px;}
+.user-bar-change{font-size:0.65rem;letter-spacing:0.08em;text-transform:uppercase;color:#bbb;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;transition:color 0.15s;padding:0;}
+.user-bar-change:hover{color:#888;}
   background:linear-gradient(135deg,rgba(255,248,220,0.9),rgba(255,235,180,0.85));
   border:1px solid rgba(180,140,60,0.3);
   border-radius:16px;padding:18px 22px;margin-bottom:20px;
@@ -213,6 +273,28 @@ textarea{min-height:96px;}
 <div class="grain"></div>
 <div class="toast" id="toast"></div>
 
+<!-- ══ LOGIN PAGE ══ -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="c-tr"></div><div class="c-bl"></div>
+    <div class="login-inner">
+      <div class="login-logo-wrap">
+        <span class="logo">D</span><span class="logo-i">note</span>
+      </div>
+      <div class="login-sub">Papan pesan global</div>
+
+      <label class="login-label" for="login-name-inp">Siapa namamu?</label>
+      <input class="login-input" id="login-name-inp" type="text"
+        placeholder="Tulis namamu…" maxlength="40" autocomplete="off"/>
+      <p class="login-hint">Namamu disimpan di perangkat ini.<br><span>Tidak perlu login lagi setelah ini.</span></p>
+
+      <button class="btn-submit" id="btn-login" onclick="doLogin()" style="margin-top:24px;">
+        Masuk &rarr;
+      </button>
+    </div>
+  </div>
+</div>
+
 <header>
   <div class="logo-wrap">
     <span class="logo">D</span><span class="logo-i">note</span>
@@ -252,14 +334,16 @@ textarea{min-height:96px;}
     4. Refresh halaman ini ✓
   </div>
 
+  <!-- User bar — tampil setelah login -->
+  <div class="user-bar" id="user-bar">
+    <div class="user-bar-name"><span>Halo,</span><span id="user-bar-display">—</span></div>
+    <button class="user-bar-change" onclick="changeUser()">Ganti Nama</button>
+  </div>
+
   <div class="fancy-card">
     <div class="c-tr"></div><div class="c-bl"></div>
     <div class="card-inner">
       <div class="form-grid">
-        <div class="form-group">
-          <label>Nama</label>
-          <input type="text" id="inp-name" placeholder="Nama kamu…" maxlength="40"/>
-        </div>
         <div class="form-group">
           <label>Font</label>
           <select id="inp-font">
@@ -439,7 +523,6 @@ function syncColor(p, h) {
   });
 }
 
-const inpName  = document.getElementById('inp-name');
 const inpMsg   = document.getElementById('inp-msg');
 const inpFont  = document.getElementById('inp-font');
 const prevName = document.getElementById('prev-name');
@@ -453,8 +536,8 @@ const ctH = document.getElementById('color-text-hex');
 syncColor(cnP, cnH); syncColor(ctP, ctH);
 
 function updatePreview() {
-  const name  = inpName.value.trim() || 'Nama';
-  const msg   = inpMsg.value.trim()  || 'teks pesanmu akan muncul di sini…';
+  const name = localStorage.getItem('dnote_username') || 'Nama';
+  const msg  = inpMsg.value.trim() || 'teks pesanmu akan muncul di sini…';
   const cN = isHex(cnH.value) ? cnH.value : cnP.value;
   const cT = isHex(ctH.value) ? ctH.value : ctP.value;
   prevStrip.style.fontFamily = inpFont.value;
@@ -462,7 +545,6 @@ function updatePreview() {
   prevMsg.style.color  = cT; prevMsg.textContent  = msg;
 }
 
-inpName.addEventListener('input', updatePreview);
 inpMsg.addEventListener('input', updatePreview);
 inpFont.addEventListener('change', updatePreview);
 
@@ -559,10 +641,10 @@ function setStatus(online, text) {
 
 // ── Submit ──
 async function submitMessage() {
-  const name = inpName.value.trim();
+  const name = localStorage.getItem('dnote_username') || '';
   const text = inpMsg.value.trim();
-  if (!name) { shake(inpName); inpName.focus(); return; }
-  if (!text) { shake(inpMsg);  inpMsg.focus();  return; }
+  if (!name) { showToast('⚠ Login dulu ya!'); return; }
+  if (!text) { shake(inpMsg); inpMsg.focus(); return; }
 
   const btn = document.getElementById('btn-send');
   btn.disabled = true;
@@ -611,9 +693,53 @@ inpMsg.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitMessage(); }
 });
 
+// ── LOGIN ──
+const NAME_KEY = 'dnote_username';
+
+function doLogin() {
+  const inp = document.getElementById('login-name-inp');
+  const name = inp.value.trim();
+  if (!name) { shake(inp); inp.focus(); return; }
+  localStorage.setItem(NAME_KEY, name);
+  enterApp(name);
+}
+
+function enterApp(name) {
+  // Animasi hilang
+  const page = document.getElementById('login-page');
+  page.classList.add('hide');
+  setTimeout(() => page.style.display = 'none', 400);
+
+  // Tampilkan nama di user bar
+  document.getElementById('user-bar-display').textContent = name;
+  updatePreview();
+  diagnoseAndInit();
+}
+
+function changeUser() {
+  if (!confirm('Ganti nama? Pesan lama tetap tersimpan.')) return;
+  localStorage.removeItem(NAME_KEY);
+  location.reload();
+}
+
+// ── Enter on login input ──
+document.getElementById('login-name-inp').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
 // ── Boot ──
-updatePreview();
-diagnoseAndInit();
+const savedName = localStorage.getItem(NAME_KEY);
+if (savedName) {
+  // Sudah pernah login — langsung masuk
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('user-bar-display').textContent = savedName;
+  updatePreview();
+  diagnoseAndInit();
+} else {
+  // Belum login — tampilkan halaman login
+  // (diagnoseAndInit dipanggil setelah login)
+  document.getElementById('login-page').style.display = 'flex';
+}
 </script>
 </body>
 </html>
