@@ -1,6 +1,21 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║                    DNOTE — SETUP FIREBASE                    ║
+  ╠══════════════════════════════════════════════════════════════╣
+  ║  1. Buka https://console.firebase.google.com                 ║
+  ║  2. Klik "Add project" → beri nama → buat project            ║
+  ║  3. Di sidebar kiri, klik "Build" → "Realtime Database"      ║
+  ║  4. Klik "Create database" → pilih region → "Start in        ║
+  ║     test mode" → Enable                                      ║
+  ║  5. Di sidebar kiri, klik ikon roda gigi ⚙ → Project         ║
+  ║     settings → scroll ke "Your apps" → klik </> (Web)        ║
+  ║  6. Daftarkan app → salin konfigurasi firebaseConfig         ║
+  ║  7. Ganti nilai di bagian FIREBASE CONFIG di bawah ini       ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Dnote</title>
@@ -8,283 +23,167 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-/* ═══════════════════════════════════════
-   BACKGROUND
-═══════════════════════════════════════ */
 body {
-  font-family: 'Inter', sans-serif;
-  min-height: 100vh;
-  padding: 64px 20px 100px;
-  color: #1a1a1a;
-  overflow-x: hidden;
-  position: relative;
+  font-family:'Inter',sans-serif;
+  min-height:100vh;
+  padding:64px 20px 100px;
+  color:#1a1a1a;
+  overflow-x:hidden;
+  position:relative;
   background:
     radial-gradient(ellipse 80% 60% at 10% 10%, rgba(210,210,205,0.55) 0%, transparent 70%),
     radial-gradient(ellipse 60% 50% at 90% 80%, rgba(195,195,190,0.45) 0%, transparent 65%),
     radial-gradient(ellipse 50% 60% at 60% 40%, rgba(225,223,218,0.30) 0%, transparent 60%),
-    linear-gradient(160deg, #f7f6f3 0%, #edecea 40%, #e2e1de 100%);
+    linear-gradient(160deg,#f7f6f3 0%,#edecea 40%,#e2e1de 100%);
 }
 
-/* Floating orbs */
-.bg-orb { position:fixed; border-radius:50%; pointer-events:none; z-index:0; }
-.bg-orb-1 {
-  width:520px; height:520px; top:-180px; left:-180px;
-  background: radial-gradient(circle, rgba(200,198,193,0.35) 0%, transparent 70%);
-  animation: floatA 20s ease-in-out infinite alternate;
-}
-.bg-orb-2 {
-  width:400px; height:400px; bottom:-120px; right:-100px;
-  background: radial-gradient(circle, rgba(185,183,178,0.30) 0%, transparent 70%);
-  animation: floatB 26s ease-in-out infinite alternate;
-}
-.bg-orb-3 {
-  width:280px; height:280px; top:40%; left:55%;
-  background: radial-gradient(circle, rgba(215,213,208,0.20) 0%, transparent 70%);
-  animation: floatC 32s ease-in-out infinite alternate;
-}
-@keyframes floatA { to { transform: translate(50px,60px) scale(1.08); } }
-@keyframes floatB { to { transform: translate(-40px,-50px) scale(1.1); } }
-@keyframes floatC { to { transform: translate(-30px,40px) scale(0.95); } }
+.bg-orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;}
+.bg-orb-1{width:520px;height:520px;top:-180px;left:-180px;background:radial-gradient(circle,rgba(200,198,193,0.35) 0%,transparent 70%);animation:floatA 20s ease-in-out infinite alternate;}
+.bg-orb-2{width:400px;height:400px;bottom:-120px;right:-100px;background:radial-gradient(circle,rgba(185,183,178,0.30) 0%,transparent 70%);animation:floatB 26s ease-in-out infinite alternate;}
+.bg-orb-3{width:280px;height:280px;top:40%;left:55%;background:radial-gradient(circle,rgba(215,213,208,0.20) 0%,transparent 70%);animation:floatC 32s ease-in-out infinite alternate;}
+@keyframes floatA{to{transform:translate(50px,60px) scale(1.08);}}
+@keyframes floatB{to{transform:translate(-40px,-50px) scale(1.1);}}
+@keyframes floatC{to{transform:translate(-30px,40px) scale(0.95);}}
 
-/* Grain texture */
-.grain {
-  position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.25;
-  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size:180px;
-}
+.grain{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.25;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:180px;}
 
-header,.wrapper { position:relative; z-index:1; }
+header,.wrapper{position:relative;z-index:1;}
 
-/* ═══════════════════════════════════════
-   HEADER
-═══════════════════════════════════════ */
-header { text-align:center; margin-bottom:56px; }
+/* ── HEADER ── */
+header{text-align:center;margin-bottom:56px;}
+.logo-wrap{display:inline-flex;align-items:baseline;gap:1px;}
+.logo{font-family:'Cormorant Garamond',serif;font-size:clamp(3.8rem,9vw,6rem);font-weight:300;letter-spacing:-0.04em;line-height:1;background:linear-gradient(135deg,#111 0%,#666 55%,#222 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.logo-i{font-family:'Cormorant Garamond',serif;font-size:clamp(3.8rem,9vw,6rem);font-weight:300;font-style:italic;letter-spacing:-0.04em;line-height:1;background:linear-gradient(135deg,#444 0%,#999 55%,#555 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header-sub{margin-top:10px;font-size:0.72rem;font-weight:400;letter-spacing:0.22em;text-transform:uppercase;color:#aaa;}
+.header-ornament{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:18px;}
+.orn-line{width:56px;height:1px;background:linear-gradient(90deg,transparent,#bbb 80%);}
+.orn-line.r{background:linear-gradient(90deg,#bbb 20%,transparent);}
+.orn-diamond{width:6px;height:6px;background:#bbb;transform:rotate(45deg);}
+.orn-dot{width:3px;height:3px;border-radius:50%;background:#ccc;}
 
-.logo-wrap { display:inline-flex; align-items:baseline; gap:1px; }
-.logo {
-  font-family:'Cormorant Garamond',serif;
-  font-size:clamp(3.8rem,9vw,6rem);
-  font-weight:300; letter-spacing:-0.04em; line-height:1;
-  background:linear-gradient(135deg,#111 0%,#666 55%,#222 100%);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+/* ── LIVE BADGE ── */
+.live-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  margin-top:14px;
+  padding:4px 12px 4px 8px;
+  background:rgba(255,255,255,0.55);
+  border:1px solid rgba(0,0,0,0.10);
+  border-radius:100px;
+  font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:#888;
+  backdrop-filter:blur(6px);
 }
-.logo-i {
-  font-family:'Cormorant Garamond',serif;
-  font-size:clamp(3.8rem,9vw,6rem);
-  font-weight:300; font-style:italic; letter-spacing:-0.04em; line-height:1;
-  background:linear-gradient(135deg,#444 0%,#999 55%,#555 100%);
-  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+.live-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:#4caf50;
+  box-shadow:0 0 0 0 rgba(76,175,80,0.4);
+  animation:pulse 2s ease-in-out infinite;
 }
-.header-sub {
-  margin-top:10px; font-size:0.72rem; font-weight:400;
-  letter-spacing:0.22em; text-transform:uppercase; color:#aaa;
-}
-.header-ornament {
-  display:flex; align-items:center; justify-content:center;
-  gap:10px; margin-top:18px;
-}
-.orn-line { width:56px; height:1px; background:linear-gradient(90deg,transparent,#bbb 80%); }
-.orn-line.r { background:linear-gradient(90deg,#bbb 20%,transparent); }
-.orn-diamond { width:6px; height:6px; background:#bbb; transform:rotate(45deg); }
-.orn-dot { width:3px; height:3px; border-radius:50%; background:#ccc; }
+.live-dot.offline{background:#ccc;box-shadow:none;animation:none;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(76,175,80,0.4);}50%{box-shadow:0 0 0 5px rgba(76,175,80,0);}}
 
-/* ═══════════════════════════════════════
-   FANCY CARD
-═══════════════════════════════════════ */
-.wrapper { max-width:680px; margin:0 auto; }
+/* ── SETUP BANNER ── */
+.setup-banner{
+  background:linear-gradient(135deg,rgba(255,248,220,0.9),rgba(255,235,180,0.85));
+  border:1px solid rgba(180,140,60,0.3);
+  border-radius:16px;padding:18px 22px;margin-bottom:20px;
+  font-size:0.82rem;line-height:1.7;color:#6b5000;
+  position:relative;overflow:hidden;
+}
+.setup-banner::before{content:'⚙';position:absolute;right:16px;top:14px;font-size:1.4rem;opacity:0.3;}
+.setup-banner strong{font-weight:600;display:block;margin-bottom:4px;font-size:0.85rem;}
+.setup-banner code{background:rgba(0,0,0,0.08);padding:1px 6px;border-radius:4px;font-size:0.78rem;font-family:'Courier New',monospace;}
+.setup-banner.hidden{display:none;}
 
-.fancy-card {
-  position:relative; border-radius:22px; padding:2px;
+/* ── FANCY CARD ── */
+.wrapper{max-width:680px;margin:0 auto;}
+.fancy-card{
+  position:relative;border-radius:22px;padding:2px;
   background:linear-gradient(145deg,#d8d6d0,#f5f4f1,#c8c6c0,#eceae6);
-  box-shadow:
-    0 2px 0 rgba(255,255,255,0.9) inset,
-    0 20px 60px rgba(0,0,0,0.10),
-    0 4px 16px rgba(0,0,0,0.06);
+  box-shadow:0 2px 0 rgba(255,255,255,0.9) inset,0 20px 60px rgba(0,0,0,0.10),0 4px 16px rgba(0,0,0,0.06);
   margin-bottom:22px;
 }
-/* corner brackets */
-.fancy-card::before,.fancy-card::after,
-.fancy-card .c-tr,.fancy-card .c-bl {
-  content:''; position:absolute;
-  width:20px; height:20px;
-  border-color:rgba(110,108,102,0.30); border-style:solid;
-  z-index:2; pointer-events:none;
-}
-.fancy-card::before { top:10px; left:10px; border-width:1.5px 0 0 1.5px; border-radius:4px 0 0 0; }
-.fancy-card::after  { bottom:10px; right:10px; border-width:0 1.5px 1.5px 0; border-radius:0 0 4px 0; }
-.fancy-card .c-tr   { top:10px; right:10px; border-width:1.5px 1.5px 0 0; border-radius:0 4px 0 0; }
-.fancy-card .c-bl   { bottom:10px; left:10px; border-width:0 0 1.5px 1.5px; border-radius:0 0 0 4px; }
+.fancy-card::before,.fancy-card::after,.fancy-card .c-tr,.fancy-card .c-bl{content:'';position:absolute;width:20px;height:20px;border-color:rgba(110,108,102,0.30);border-style:solid;z-index:2;pointer-events:none;}
+.fancy-card::before{top:10px;left:10px;border-width:1.5px 0 0 1.5px;border-radius:4px 0 0 0;}
+.fancy-card::after{bottom:10px;right:10px;border-width:0 1.5px 1.5px 0;border-radius:0 0 4px 0;}
+.fancy-card .c-tr{top:10px;right:10px;border-width:1.5px 1.5px 0 0;border-radius:0 4px 0 0;}
+.fancy-card .c-bl{bottom:10px;left:10px;border-width:0 0 1.5px 1.5px;border-radius:0 0 0 4px;}
+.card-inner{background:linear-gradient(150deg,rgba(255,255,255,0.97) 0%,rgba(248,247,244,0.95) 35%,rgba(238,236,232,0.92) 70%,rgba(228,226,222,0.90) 100%);border-radius:20px;padding:30px 28px;position:relative;overflow:hidden;}
+.card-inner::before{content:'';position:absolute;top:-40%;left:-20%;width:60%;height:70%;background:radial-gradient(ellipse,rgba(255,255,255,0.55) 0%,transparent 70%);pointer-events:none;}
 
-.card-inner {
-  background:linear-gradient(150deg,
-    rgba(255,255,255,0.97) 0%,
-    rgba(248,247,244,0.95) 35%,
-    rgba(238,236,232,0.92) 70%,
-    rgba(228,226,222,0.90) 100%
-  );
-  border-radius:20px; padding:30px 28px; position:relative; overflow:hidden;
-}
-/* light shimmer */
-.card-inner::before {
-  content:''; position:absolute;
-  top:-40%; left:-20%; width:60%; height:70%;
-  background:radial-gradient(ellipse, rgba(255,255,255,0.55) 0%, transparent 70%);
-  pointer-events:none;
-}
-
-/* ═══════════════════════════════════════
-   FORM
-═══════════════════════════════════════ */
-.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-.form-group { display:flex; flex-direction:column; gap:7px; }
-.form-group.full { grid-column:1/-1; }
-.form-divider { grid-column:1/-1; height:1px; background:linear-gradient(90deg,transparent,rgba(0,0,0,0.07),transparent); margin:2px 0; }
-
-label { font-size:0.65rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:#999; }
-
-input[type="text"],textarea,select {
-  font-family:'Inter',sans-serif; font-size:0.92rem;
-  background:rgba(255,255,255,0.72);
-  border:1px solid rgba(0,0,0,0.16); border-radius:12px;
-  padding:10px 14px; width:100%; color:#1a1a1a; outline:none; resize:none;
-  transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;
-}
-input[type="text"]:focus,textarea:focus,select:focus {
-  background:rgba(255,255,255,0.94);
-  border-color:rgba(0,0,0,0.38);
-  box-shadow:0 0 0 3px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.07);
-}
-textarea { min-height:96px; }
-
-.color-row { display:flex; align-items:center; gap:10px; }
-.color-row input[type="color"] {
-  width:40px; height:40px; border:1px solid rgba(0,0,0,0.18);
-  border-radius:10px; padding:3px; cursor:pointer;
-  background:rgba(255,255,255,0.7); flex-shrink:0;
-}
-.color-row input[type="text"] { flex:1; font-size:0.82rem; }
+/* ── FORM ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:7px;}
+.form-group.full{grid-column:1/-1;}
+.form-divider{grid-column:1/-1;height:1px;background:linear-gradient(90deg,transparent,rgba(0,0,0,0.07),transparent);margin:2px 0;}
+label{font-size:0.65rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:#999;}
+input[type="text"],textarea,select{font-family:'Inter',sans-serif;font-size:0.92rem;background:rgba(255,255,255,0.72);border:1px solid rgba(0,0,0,0.16);border-radius:12px;padding:10px 14px;width:100%;color:#1a1a1a;outline:none;resize:none;transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;}
+input[type="text"]:focus,textarea:focus,select:focus{background:rgba(255,255,255,0.94);border-color:rgba(0,0,0,0.38);box-shadow:0 0 0 3px rgba(0,0,0,0.05),0 2px 8px rgba(0,0,0,0.07);}
+textarea{min-height:96px;}
+.color-row{display:flex;align-items:center;gap:10px;}
+.color-row input[type="color"]{width:40px;height:40px;border:1px solid rgba(0,0,0,0.18);border-radius:10px;padding:3px;cursor:pointer;background:rgba(255,255,255,0.7);flex-shrink:0;}
+.color-row input[type="text"]{flex:1;font-size:0.82rem;}
 
 /* preview */
-#preview-strip {
-  margin-top:20px; padding:14px 18px;
-  background:linear-gradient(135deg,rgba(255,255,255,0.5) 0%,rgba(232,230,225,0.5) 100%);
-  border:1px dashed rgba(0,0,0,0.13); border-radius:13px;
-  font-size:0.9rem; min-height:48px; word-break:break-word; position:relative;
-}
-#preview-strip .prev-label {
-  position:absolute; top:7px; right:12px;
-  font-size:0.52rem; letter-spacing:0.14em; color:rgba(0,0,0,0.18);
-  text-transform:uppercase; font-weight:500;
-}
-#preview-strip .preview-by { font-size:0.7rem; opacity:0.38; margin-right:4px; letter-spacing:0.05em; }
+#preview-strip{margin-top:20px;padding:14px 18px;background:linear-gradient(135deg,rgba(255,255,255,0.5) 0%,rgba(232,230,225,0.5) 100%);border:1px dashed rgba(0,0,0,0.13);border-radius:13px;font-size:0.9rem;min-height:48px;word-break:break-word;position:relative;}
+#preview-strip .prev-label{position:absolute;top:7px;right:12px;font-size:0.52rem;letter-spacing:0.14em;color:rgba(0,0,0,0.18);text-transform:uppercase;font-weight:500;}
+#preview-strip .preview-by{font-size:0.7rem;opacity:0.38;margin-right:4px;letter-spacing:0.05em;}
 
 /* button */
-.btn-submit {
-  margin-top:20px; width:100%; padding:13px;
-  font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:500;
-  letter-spacing:0.1em; text-transform:uppercase; color:#fff;
-  border:none; border-radius:13px; cursor:pointer; position:relative; overflow:hidden;
-  background:linear-gradient(135deg,#2a2a2a 0%,#4a4a4a 50%,#1a1a1a 100%);
-  box-shadow:0 2px 0 rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.18);
-  transition:transform 0.13s,box-shadow 0.13s;
-}
-.btn-submit::before {
-  content:''; position:absolute; inset:0;
-  background:linear-gradient(135deg,rgba(255,255,255,0.10) 0%,transparent 60%);
-}
-.btn-submit:hover { transform:translateY(-1px); box-shadow:0 4px 0 rgba(0,0,0,0.4), 0 12px 28px rgba(0,0,0,0.22); }
-.btn-submit:active { transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,0.5); }
+.btn-submit{margin-top:20px;width:100%;padding:13px;font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:#fff;border:none;border-radius:13px;cursor:pointer;position:relative;overflow:hidden;background:linear-gradient(135deg,#2a2a2a 0%,#4a4a4a 50%,#1a1a1a 100%);box-shadow:0 2px 0 rgba(0,0,0,0.5),0 8px 24px rgba(0,0,0,0.18);transition:transform 0.13s,box-shadow 0.13s,opacity 0.2s;}
+.btn-submit::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.10) 0%,transparent 60%);}
+.btn-submit:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 0 rgba(0,0,0,0.4),0 12px 28px rgba(0,0,0,0.22);}
+.btn-submit:active:not(:disabled){transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,0.5);}
+.btn-submit:disabled{opacity:0.5;cursor:not-allowed;}
 
-/* ═══════════════════════════════════════
-   SECTION LABEL
-═══════════════════════════════════════ */
-.section-label {
-  font-size:0.62rem; font-weight:500; letter-spacing:0.15em;
-  text-transform:uppercase; color:#aaa;
-  display:flex; align-items:center; gap:12px; margin-bottom:16px;
-}
-.section-label::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,rgba(0,0,0,0.09),transparent); }
+/* spinner inside button */
+.btn-spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;margin-right:8px;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-/* ═══════════════════════════════════════
-   MESSAGE CARDS
-═══════════════════════════════════════ */
-#message-list { display:flex; flex-direction:column; gap:14px; }
+/* ── SECTION LABEL ── */
+.section-label{font-size:0.62rem;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:#aaa;display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.section-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(0,0,0,0.09),transparent);}
 
-.msg-wrap {
-  position:relative; border-radius:20px; padding:1.5px;
-  animation:slideIn 0.3s cubic-bezier(.22,.68,0,1.2);
-  box-shadow:0 16px 48px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
-}
-/* gradient border variations */
-.msg-wrap:nth-child(6n+1) { background:linear-gradient(135deg,#c5c3be 0%,#eeece8 45%,#b8b6b1 100%); }
-.msg-wrap:nth-child(6n+2) { background:linear-gradient(155deg,#d0cec9 0%,#f0eee9 50%,#bfbdb8 100%); }
-.msg-wrap:nth-child(6n+3) { background:linear-gradient(115deg,#c8c6c1 0%,#edebe6 45%,#bab8b3 100%); }
-.msg-wrap:nth-child(6n+4) { background:linear-gradient(145deg,#cac8c3 0%,#efede8 48%,#bcbab5 100%); }
-.msg-wrap:nth-child(6n+5) { background:linear-gradient(125deg,#cccac5 0%,#f1efe9 46%,#bebcb7 100%); }
-.msg-wrap:nth-child(6n+0) { background:linear-gradient(165deg,#c6c4bf 0%,#ececE7 48%,#b9b7b2 100%); }
+/* ── MESSAGE CARDS ── */
+#message-list{display:flex;flex-direction:column;gap:14px;}
 
-/* corner brackets on message cards */
-.msg-wrap::before,.msg-wrap::after,.msg-wrap .mc2,.msg-wrap .mc3 {
-  content:''; position:absolute;
-  width:14px; height:14px;
-  border-color:rgba(90,88,83,0.25); border-style:solid;
-  z-index:2; pointer-events:none;
-}
-.msg-wrap::before { top:8px; left:8px; border-width:1.5px 0 0 1.5px; border-radius:3px 0 0 0; }
-.msg-wrap::after  { bottom:8px; right:8px; border-width:0 1.5px 1.5px 0; border-radius:0 0 3px 0; }
-.msg-wrap .mc2    { top:8px; right:8px; border-width:1.5px 1.5px 0 0; border-radius:0 3px 0 0; }
-.msg-wrap .mc3    { bottom:8px; left:8px; border-width:0 0 1.5px 1.5px; border-radius:0 0 0 3px; }
+.msg-wrap{position:relative;border-radius:20px;padding:1.5px;animation:slideIn 0.3s cubic-bezier(.22,.68,0,1.2);box-shadow:0 16px 48px rgba(0,0,0,0.08),0 4px 12px rgba(0,0,0,0.05);}
+.msg-wrap:nth-child(6n+1){background:linear-gradient(135deg,#c5c3be 0%,#eeece8 45%,#b8b6b1 100%);}
+.msg-wrap:nth-child(6n+2){background:linear-gradient(155deg,#d0cec9 0%,#f0eee9 50%,#bfbdb8 100%);}
+.msg-wrap:nth-child(6n+3){background:linear-gradient(115deg,#c8c6c1 0%,#edebe6 45%,#bab8b3 100%);}
+.msg-wrap:nth-child(6n+4){background:linear-gradient(145deg,#cac8c3 0%,#efede8 48%,#bcbab5 100%);}
+.msg-wrap:nth-child(6n+5){background:linear-gradient(125deg,#cccac5 0%,#f1efe9 46%,#bebcb7 100%);}
+.msg-wrap:nth-child(6n+0){background:linear-gradient(165deg,#c6c4bf 0%,#ececE7 48%,#b9b7b2 100%);}
+.msg-wrap::before,.msg-wrap::after,.msg-wrap .mc2,.msg-wrap .mc3{content:'';position:absolute;width:14px;height:14px;border-color:rgba(90,88,83,0.25);border-style:solid;z-index:2;pointer-events:none;}
+.msg-wrap::before{top:8px;left:8px;border-width:1.5px 0 0 1.5px;border-radius:3px 0 0 0;}
+.msg-wrap::after{bottom:8px;right:8px;border-width:0 1.5px 1.5px 0;border-radius:0 0 3px 0;}
+.msg-wrap .mc2{top:8px;right:8px;border-width:1.5px 1.5px 0 0;border-radius:0 3px 0 0;}
+.msg-wrap .mc3{bottom:8px;left:8px;border-width:0 0 1.5px 1.5px;border-radius:0 0 0 3px;}
 
-.msg-inner {
-  background:linear-gradient(150deg,
-    rgba(255,255,255,0.96) 0%,
-    rgba(249,248,244,0.93) 40%,
-    rgba(239,237,232,0.91) 100%
-  );
-  border-radius:18.5px; padding:18px 22px 38px;
-  position:relative; overflow:hidden; word-break:break-word;
-}
-.msg-inner::before {
-  content:''; position:absolute; top:-30%; left:-10%;
-  width:50%; height:60%;
-  background:radial-gradient(ellipse,rgba(255,255,255,0.45) 0%,transparent 70%);
-  pointer-events:none;
-}
+.msg-inner{background:linear-gradient(150deg,rgba(255,255,255,0.96) 0%,rgba(249,248,244,0.93) 40%,rgba(239,237,232,0.91) 100%);border-radius:18.5px;padding:18px 22px 38px;position:relative;overflow:hidden;word-break:break-word;}
+.msg-inner::before{content:'';position:absolute;top:-30%;left:-10%;width:50%;height:60%;background:radial-gradient(ellipse,rgba(255,255,255,0.45) 0%,transparent 70%);pointer-events:none;}
 
-@keyframes slideIn {
-  from { opacity:0; transform:translateY(-12px) scale(0.97); }
-  to   { opacity:1; transform:translateY(0) scale(1); }
-}
+@keyframes slideIn{from{opacity:0;transform:translateY(-12px) scale(0.97);}to{opacity:1;transform:translateY(0) scale(1);}}
 
-.msg-header { display:flex; align-items:baseline; gap:6px; margin-bottom:7px; flex-wrap:wrap; }
-.msg-by { font-size:0.63rem; letter-spacing:0.09em; text-transform:uppercase; color:#c0beba; }
-.msg-name { font-weight:500; font-size:0.93rem; }
-.msg-sep { color:#d5d3ce; margin:0 2px; font-size:0.8rem; }
-.msg-text { font-size:0.91rem; line-height:1.68; }
-.msg-time {
-  position:absolute; right:18px; top:16px;
-  font-size:0.6rem; color:#ccc; letter-spacing:0.05em;
-}
-.msg-del {
-  position:absolute; right:14px; bottom:12px;
-  font-size:0.6rem; color:#ccc; cursor:pointer;
-  background:none; border:none; letter-spacing:0.06em;
-  text-transform:uppercase; font-family:'Inter',sans-serif; transition:color 0.15s;
-}
-.msg-del:hover { color:#c55; }
-.deco-quote {
-  position:absolute; bottom:6px; left:18px;
-  font-family:'Cormorant Garamond',serif; font-size:4rem; line-height:1;
-  color:rgba(0,0,0,0.04); font-weight:300; pointer-events:none; user-select:none;
-}
+.msg-header{display:flex;align-items:baseline;gap:6px;margin-bottom:7px;flex-wrap:wrap;}
+.msg-by{font-size:0.63rem;letter-spacing:0.09em;text-transform:uppercase;color:#c0beba;}
+.msg-name{font-weight:500;font-size:0.93rem;}
+.msg-sep{color:#d5d3ce;margin:0 2px;font-size:0.8rem;}
+.msg-text{font-size:0.91rem;line-height:1.68;}
+.msg-time{position:absolute;right:18px;top:16px;font-size:0.6rem;color:#ccc;letter-spacing:0.05em;}
+.deco-quote{position:absolute;bottom:6px;left:18px;font-family:'Cormorant Garamond',serif;font-size:4rem;line-height:1;color:rgba(0,0,0,0.04);font-weight:300;pointer-events:none;user-select:none;}
+
+/* loading skeleton */
+.skeleton-card{border-radius:20px;overflow:hidden;background:linear-gradient(135deg,#e8e6e1,#f0eee9);padding:1.5px;box-shadow:0 4px 12px rgba(0,0,0,0.04);}
+.skeleton-inner{background:linear-gradient(150deg,rgba(255,255,255,0.9),rgba(245,243,238,0.85));border-radius:18.5px;padding:18px 22px;height:90px;position:relative;overflow:hidden;}
+.skeleton-inner::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.5) 50%,transparent 100%);background-size:200% 100%;animation:shimmer 1.4s infinite;}
+@keyframes shimmer{from{background-position:200% 0;}to{background-position:-200% 0;}}
 
 /* empty */
-#empty-state {
-  text-align:center; padding:52px 24px;
-  font-family:'Cormorant Garamond',serif; font-style:italic;
-  font-size:1.1rem; font-weight:300; color:#c5c3be;
-  letter-spacing:0.06em;
-}
+#empty-state{text-align:center;padding:52px 24px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.1rem;font-weight:300;color:#c5c3be;letter-spacing:0.06em;}
+
+/* error toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:100px;font-size:0.78rem;letter-spacing:0.05em;opacity:0;transition:opacity 0.3s,transform 0.3s;z-index:999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 @media(max-width:480px){
   .form-grid{grid-template-columns:1fr;}
@@ -298,6 +197,7 @@ textarea { min-height:96px; }
 <div class="bg-orb bg-orb-2"></div>
 <div class="bg-orb bg-orb-3"></div>
 <div class="grain"></div>
+<div class="toast" id="toast"></div>
 
 <header>
   <div class="logo-wrap">
@@ -311,17 +211,30 @@ textarea { min-height:96px; }
     <div class="orn-dot"></div>
     <div class="orn-line r"></div>
   </div>
+  <div style="margin-top:14px;">
+    <span class="live-badge">
+      <span class="live-dot" id="live-dot"></span>
+      <span id="live-label">Menghubungkan…</span>
+    </span>
+  </div>
 </header>
 
 <div class="wrapper">
+
+  <!-- Setup Banner — hilang otomatis setelah Firebase dikonfigurasi -->
+  <div class="setup-banner" id="setup-banner">
+    <strong>⚙ Perlu Setup Firebase (sekali saja)</strong>
+    Ganti nilai <code>FIREBASE_CONFIG</code> di bagian script dengan config dari project Firebase kamu.<br>
+    Ikuti instruksi di komentar atas file ini. Setelah diisi, banner ini hilang otomatis.
+  </div>
 
   <div class="fancy-card">
     <div class="c-tr"></div><div class="c-bl"></div>
     <div class="card-inner">
       <div class="form-grid">
         <div class="form-group">
-          <label></label>
-          <input type="text" id="inp-name" placeholder="Namamu" maxlength="40"/>
+          <label>Nama</label>
+          <input type="text" id="inp-name" placeholder="Nama kamu…" maxlength="40"/>
         </div>
         <div class="form-group">
           <label>Font</label>
@@ -352,7 +265,7 @@ textarea { min-height:96px; }
         <div class="form-divider"></div>
         <div class="form-group full">
           <label>Pesan</label>
-          <textarea id="inp-msg" placeholder="pesanmu (Enter kirim · Shift+Enter baris baru)" maxlength="500"></textarea>
+          <textarea id="inp-msg" placeholder="Tulis pesanmu… (Enter kirim · Shift+Enter baris baru)" maxlength="500"></textarea>
         </div>
       </div>
 
@@ -364,103 +277,226 @@ textarea { min-height:96px; }
         <span id="prev-msg" style="color:#2a2a2a;">teks pesanmu akan muncul di sini…</span>
       </div>
 
-      <button class="btn-submit" onclick="submitMessage()">Kirim Pesan &rarr;</button>
+      <button class="btn-submit" id="btn-send" onclick="submitMessage()">Kirim Pesan &rarr;</button>
     </div>
   </div>
 
-  <div class="section-label" id="count-label">0 pesan</div>
+  <div class="section-label" id="count-label">Memuat pesan…</div>
   <div id="message-list">
-    <div id="empty-state">Belum ada pesan — jadilah yang pertama ✦</div>
+    <!-- skeleton loading -->
+    <div class="skeleton-card"><div class="skeleton-inner"></div></div>
+    <div class="skeleton-card"><div class="skeleton-inner"></div></div>
+    <div class="skeleton-card"><div class="skeleton-inner"></div></div>
   </div>
 
 </div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
 <script>
-  const KEY = 'dnote_v1';
-  const load = () => { try { return JSON.parse(localStorage.getItem(KEY))||[]; } catch{return[];} };
-  const save = m => localStorage.setItem(KEY, JSON.stringify(m));
-  const isHex = h => /^#[0-9a-fA-F]{6}$/.test(h);
-  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  const fmt = ts => {
-    const d = new Date(ts);
-    return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})
-      +' '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+/* ══════════════════════════════════════════════════════
+   🔥 FIREBASE CONFIG — GANTI BAGIAN INI DENGAN MILIKMU
+   Dapatkan dari: Firebase Console → Project Settings → Your Apps
+══════════════════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "AIzaSyDr0RjDbtYaPzjU5HkLECVH8W0jPKu3Hb4",
+  authDomain: "fir-db-67c15.firebaseapp.com",
+  databaseURL: "https://fir-db-67c15-default-rtdb.firebaseio.com",
+  projectId: "fir-db-67c15",
+  storageBucket: "fir-db-67c15.firebasestorage.app",
+  messagingSenderId: "922618987575",
+  appId: "1:922618987575:web:10269fd4e5b60a81d52bb2",
+  measurementId: "G-KH8GSWN09L"
+};
+
+/* ══════════════════════════════════════════════════════ */
+
+// ── Cek apakah config sudah diisi ──
+const isConfigured = !Object.values(FIREBASE_CONFIG).some(v => v.startsWith('GANTI'));
+if (isConfigured) document.getElementById('setup-banner').classList.add('hidden');
+
+// ── Init Firebase ──
+let db = null;
+try {
+  if (isConfigured) {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+  }
+} catch(e) { console.error('Firebase init error:', e); }
+
+// ── Helpers ──
+const isHex = h => /^#[0-9a-fA-F]{6}$/.test(h);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const fmt = ts => {
+  const d = new Date(ts);
+  return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})
+    +' '+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+};
+
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── Color sync ──
+function syncColor(p, h) {
+  p.addEventListener('input', () => { h.value = p.value; updatePreview(); });
+  h.addEventListener('input', () => {
+    const v = h.value.startsWith('#') ? h.value : '#' + h.value;
+    if (isHex(v)) { p.value = v; updatePreview(); }
+  });
+}
+
+const inpName  = document.getElementById('inp-name');
+const inpMsg   = document.getElementById('inp-msg');
+const inpFont  = document.getElementById('inp-font');
+const prevName = document.getElementById('prev-name');
+const prevMsg  = document.getElementById('prev-msg');
+const prevStrip= document.getElementById('preview-strip');
+const cnP = document.getElementById('color-name-picker');
+const cnH = document.getElementById('color-name-hex');
+const ctP = document.getElementById('color-text-picker');
+const ctH = document.getElementById('color-text-hex');
+
+syncColor(cnP, cnH); syncColor(ctP, ctH);
+
+function updatePreview() {
+  const name  = inpName.value.trim() || 'Nama';
+  const msg   = inpMsg.value.trim()  || 'teks pesanmu akan muncul di sini…';
+  const cN = isHex(cnH.value) ? cnH.value : cnP.value;
+  const cT = isHex(ctH.value) ? ctH.value : ctP.value;
+  prevStrip.style.fontFamily = inpFont.value;
+  prevName.style.color = cN; prevName.textContent = name;
+  prevMsg.style.color  = cT; prevMsg.textContent  = msg;
+}
+
+inpName.addEventListener('input', updatePreview);
+inpMsg.addEventListener('input', updatePreview);
+inpFont.addEventListener('change', updatePreview);
+
+// ── Render messages ──
+function renderMessages(msgs) {
+  const list  = document.getElementById('message-list');
+  const label = document.getElementById('count-label');
+  label.textContent = msgs.length + ' pesan global';
+
+  if (!msgs.length) {
+    list.innerHTML = '<div id="empty-state">Belum ada pesan — jadilah yang pertama ✦</div>';
+    return;
+  }
+
+  // newest first
+  list.innerHTML = msgs.slice().reverse().map(m => `
+    <div class="msg-wrap">
+      <div class="mc2"></div><div class="mc3"></div>
+      <div class="msg-inner" style="font-family:${esc(m.font)}">
+        <span class="msg-time">${fmt(m.ts)}</span>
+        <div class="msg-header">
+          <span class="msg-by">by</span>
+          <span class="msg-name" style="color:${esc(m.colorName)}">${esc(m.name)}</span>
+          <span class="msg-sep">·</span>
+        </div>
+        <div class="msg-text" style="color:${esc(m.colorText)}">${esc(m.text).replace(/\n/g,'<br>')}</div>
+        <span class="deco-quote">"</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── Firebase Realtime Listener ──
+function startListening() {
+  if (!db) {
+    // Fallback: localStorage mode saat Firebase belum dikonfigurasi
+    setStatus(false, 'Offline — setup Firebase dulu');
+    const local = (() => { try { return JSON.parse(localStorage.getItem('dnote_local')) || []; } catch { return []; } })();
+    renderMessages(local);
+    return;
+  }
+
+  setStatus(null, 'Menghubungkan…');
+
+  const ref = db.ref('messages');
+
+  // Real-time listener — update setiap ada perubahan dari siapapun
+  ref.orderByChild('ts').on('value', snapshot => {
+    setStatus(true, 'Live · Global');
+    const msgs = [];
+    snapshot.forEach(child => msgs.push({ id: child.key, ...child.val() }));
+    renderMessages(msgs);
+  }, err => {
+    console.error(err);
+    setStatus(false, 'Koneksi gagal');
+    showToast('⚠ Gagal terhubung ke database');
+  });
+}
+
+function setStatus(online, text) {
+  const dot   = document.getElementById('live-dot');
+  const label = document.getElementById('live-label');
+  label.textContent = text;
+  if (online === true)  { dot.className = 'live-dot'; }
+  if (online === false) { dot.className = 'live-dot offline'; }
+}
+
+// ── Submit ──
+async function submitMessage() {
+  const name = inpName.value.trim();
+  const text = inpMsg.value.trim();
+  if (!name) { shake(inpName); inpName.focus(); return; }
+  if (!text) { shake(inpMsg);  inpMsg.focus();  return; }
+
+  const btn = document.getElementById('btn-send');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spinner"></span>Mengirim…';
+
+  const payload = {
+    name, text, font: inpFont.value,
+    colorName: isHex(cnH.value) ? cnH.value : cnP.value,
+    colorText:  isHex(ctH.value) ? ctH.value : ctP.value,
+    ts: Date.now()
   };
 
-  const el = id => document.getElementById(id);
-  const inpName=el('inp-name'), inpMsg=el('inp-msg'), inpFont=el('inp-font');
-  const prevName=el('prev-name'), prevMsg=el('prev-msg'), prevStrip=el('preview-strip');
-  const cnP=el('color-name-picker'), cnH=el('color-name-hex');
-  const ctP=el('color-text-picker'), ctH=el('color-text-hex');
-
-  function syncColor(p,h){
-    p.addEventListener('input',()=>{h.value=p.value;updatePreview();});
-    h.addEventListener('input',()=>{const v=h.value.startsWith('#')?h.value:'#'+h.value; if(isHex(v)){p.value=v;updatePreview();}});
+  try {
+    if (db) {
+      // Push ke Firebase — semua orang langsung lihat
+      await db.ref('messages').push(payload);
+    } else {
+      // Fallback localStorage
+      const local = (() => { try { return JSON.parse(localStorage.getItem('dnote_local')) || []; } catch { return []; } })();
+      local.push({ id: Math.random().toString(36).slice(2), ...payload });
+      localStorage.setItem('dnote_local', JSON.stringify(local));
+      renderMessages(local);
+    }
+    inpMsg.value = '';
+    updatePreview();
+    showToast('✦ Pesan terkirim!');
+  } catch(e) {
+    console.error(e);
+    showToast('✕ Gagal mengirim. Coba lagi.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Kirim Pesan &rarr;';
   }
-  syncColor(cnP,cnH); syncColor(ctP,ctH);
+}
 
-  function updatePreview(){
-    const name=inpName.value.trim()||'Nama';
-    const msg=inpMsg.value.trim()||'teks pesanmu akan muncul di sini…';
-    const cN=isHex(cnH.value)?cnH.value:cnP.value;
-    const cT=isHex(ctH.value)?ctH.value:ctP.value;
-    prevStrip.style.fontFamily=inpFont.value;
-    prevName.style.color=cN; prevName.textContent=name;
-    prevMsg.style.color=cT;  prevMsg.textContent=msg;
-  }
-  inpName.addEventListener('input',updatePreview);
-  inpMsg.addEventListener('input',updatePreview);
-  inpFont.addEventListener('change',updatePreview);
+// ── Shake animation ──
+function shake(el) {
+  [8,-8,5,-5,2,0].forEach((v,i) => setTimeout(() => el.style.transform = `translateX(${v}px)`, i*50));
+  setTimeout(() => el.style.transform = '', 320);
+  el.style.borderColor = 'rgba(200,60,60,0.55)';
+  setTimeout(() => el.style.borderColor = '', 800);
+}
 
-  function renderAll(){
-    const msgs=load(), list=el('message-list'), label=el('count-label');
-    label.textContent=msgs.length+' pesan';
-    if(!msgs.length){ list.innerHTML='<div id="empty-state">Belum ada pesan — jadilah yang pertama ✦</div>'; return; }
-    list.innerHTML=msgs.slice().reverse().map(m=>`
-      <div class="msg-wrap">
-        <div class="mc2"></div><div class="mc3"></div>
-        <div class="msg-inner" style="font-family:${esc(m.font)}">
-          <span class="msg-time">${fmt(m.ts)}</span>
-          <div class="msg-header">
-            <span class="msg-by">by</span>
-            <span class="msg-name" style="color:${esc(m.colorName)}">${esc(m.name)}</span>
-            <span class="msg-sep">·</span>
-          </div>
-          <div class="msg-text" style="color:${esc(m.colorText)}">${esc(m.text).replace(/\n/g,'<br>')}</div>
-          <span class="deco-quote">"</span>
-          <button class="msg-del" onclick="deleteMessage('${esc(m.id)}')">hapus</button>
-        </div>
-      </div>`).join('');
-  }
+// ── Enter to send ──
+inpMsg.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitMessage(); }
+});
 
-  function submitMessage(){
-    const name=inpName.value.trim(), text=inpMsg.value.trim();
-    if(!name){shake(inpName);inpName.focus();return;}
-    if(!text){shake(inpMsg);inpMsg.focus();return;}
-    const msgs=load();
-    msgs.push({id:Math.random().toString(36).slice(2)+Date.now().toString(36),name,text,
-      font:inpFont.value,
-      colorName:isHex(cnH.value)?cnH.value:cnP.value,
-      colorText:isHex(ctH.value)?ctH.value:ctP.value,
-      ts:Date.now()});
-    save(msgs); inpMsg.value=''; updatePreview(); renderAll();
-  }
-
-  function deleteMessage(id){
-    if(!confirm('Hapus pesan ini?')) return;
-    save(load().filter(m=>m.id!==id)); renderAll();
-  }
-
-  function shake(el){
-    [8,-8,5,-5,2,0].forEach((v,i)=>setTimeout(()=>el.style.transform=`translateX(${v}px)`,i*50));
-    setTimeout(()=>el.style.transform='',320);
-    el.style.borderColor='rgba(200,60,60,0.55)';
-    setTimeout(()=>el.style.borderColor='',800);
-  }
-
-  inpMsg.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitMessage();}});
-  updatePreview(); renderAll();
+// ── Boot ──
+updatePreview();
+startListening();
 </script>
 </body>
 </html>
-
