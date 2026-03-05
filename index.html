@@ -336,9 +336,8 @@ const firebaseConfig = {
 };
 /* ══════════════════════════════════════════════════════ */
 
-// ── Cek apakah config sudah diisi ──
-const isConfigured = !Object.values(FIREBASE_CONFIG).some(v => String(v).includes('GANTI'));
-if (isConfigured) document.getElementById('setup-banner').classList.add('hidden');
+// ── Sembunyikan setup banner — user sudah isi config ──
+document.getElementById('setup-banner').classList.add('hidden');
 
 // ── Helpers ──
 const isHex = h => /^#[0-9a-fA-F]{6}$/.test(h);
@@ -367,12 +366,6 @@ function showError(html) {
 // Firebase punya REST API sederhana: GET databaseURL/messages.json
 // Kalau dapat respons → config & rules OK. Kalau error → tunjukkan penyebabnya.
 async function diagnoseAndInit() {
-  if (!isConfigured) {
-    setStatus(false, 'Belum dikonfigurasi');
-    renderMessages([]);
-    return;
-  }
-
   const url = FIREBASE_CONFIG.databaseURL;
 
   // 1. Cek databaseURL ada & formatnya benar
