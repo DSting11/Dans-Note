@@ -385,7 +385,7 @@ async function diagnoseAndInit() {
   // 2. Test koneksi via REST (lebih cepat & bisa detect rules problem)
   setStatus(null, 'Mengecek koneksi…');
   try {
-    const res = await fetch(`${url}/messages.json?limitToLast=1`, { signal: AbortSignal.timeout(6000) });
+    const res = await fetch(`${url}/messages.json?shallow=true`, { signal: AbortSignal.timeout(6000) });
     if (res.status === 200) {
       // REST OK → init SDK dan mulai realtime
       initSDK();
