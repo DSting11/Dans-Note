@@ -234,7 +234,7 @@ textarea{min-height:96px;}
       <div class="form-grid">
         <div class="form-group">
           <label>Nama</label>
-          <input type="text" id="inp-name" placeholder="Nama kamu…" maxlength="40"/>
+          <input type="text" id="inp-name" placeholder="Namamu.." maxlength="40"/>
         </div>
         <div class="form-group">
           <label>Font</label>
@@ -265,7 +265,7 @@ textarea{min-height:96px;}
         <div class="form-divider"></div>
         <div class="form-group full">
           <label>Pesan</label>
-          <textarea id="inp-msg" placeholder="Tulis pesanmu… (Enter kirim · Shift+Enter baris baru)" maxlength="500"></textarea>
+          <textarea id="inp-msg" placeholder="Tulis pesan.. (Enter kirim · Shift+Enter baris baru)" maxlength="500"></textarea>
         </div>
       </div>
 
@@ -310,7 +310,6 @@ const firebaseConfig = {
   appId: "1:922618987575:web:10269fd4e5b60a81d52bb2",
   measurementId: "G-KH8GSWN09L"
 };
-
 /* ══════════════════════════════════════════════════════ */
 
 // ── Cek apakah config sudah diisi ──
@@ -408,7 +407,6 @@ function renderMessages(msgs) {
 // ── Firebase Realtime Listener ──
 function startListening() {
   if (!db) {
-    // Fallback: localStorage mode saat Firebase belum dikonfigurasi
     setStatus(false, 'Offline — setup Firebase dulu');
     const local = (() => { try { return JSON.parse(localStorage.getItem('dnote_local')) || []; } catch { return []; } })();
     renderMessages(local);
@@ -417,18 +415,44 @@ function startListening() {
 
   setStatus(null, 'Menghubungkan…');
 
-  const ref = db.ref('messages');
+  // ── 1. Monitor koneksi Firebase secara real-time ──
+  // .info/connected adalah node khusus Firebase yang selalu update
+  db.ref('.info/connected').on('value', snap => {
+    if (snap.val() === true) {
+      setStatus(true, 'Live · Global');
+    } else {
+      // Hanya tampilkan offline kalau listener sudah pernah jalan (bukan first load)
+      if (window._dnoteLoaded) setStatus(false, 'Reconnecting…');
+    }
+  });
 
-  // Real-time listener — update setiap ada perubahan dari siapapun
+  // ── 2. Timeout 8 detik — kalau belum ada respons, kasih pesan error ──
+  const loadTimeout = setTimeout(() => {
+    if (!window._dnoteLoaded) {
+      setStatus(false, 'Koneksi lambat — cek internet / Database Rules');
+      renderMessages([]); // hapus skeleton
+      document.getElementById('count-label').textContent = '⚠ Gagal memuat';
+      showToast('⚠ Koneksi timeout. Cek rules Firebase: ubah ke test mode.', 6000);
+    }
+  }, 8000);
+
+  // ── 3. Real-time listener utama ──
+  const ref = db.ref('messages');
   ref.orderByChild('ts').on('value', snapshot => {
+    clearTimeout(loadTimeout);       // batalkan timeout karena sudah dapat data
+    window._dnoteLoaded = true;      // tandai sudah loaded
     setStatus(true, 'Live · Global');
+
     const msgs = [];
     snapshot.forEach(child => msgs.push({ id: child.key, ...child.val() }));
-    renderMessages(msgs);
+    renderMessages(msgs);            // langsung render — tidak perlu refresh!
   }, err => {
+    clearTimeout(loadTimeout);
     console.error(err);
     setStatus(false, 'Koneksi gagal');
-    showToast('⚠ Gagal terhubung ke database');
+    renderMessages([]); // hapus skeleton biar tidak hang
+    document.getElementById('count-label').textContent = '⚠ Gagal memuat';
+    showToast('⚠ Gagal terhubung. Kemungkinan Database Rules sudah expired.', 6000);
   });
 }
 
@@ -500,4 +524,3 @@ startListening();
 </script>
 </body>
 </html>
-
